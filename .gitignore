@@ -1,0 +1,5 @@
+.vscode
+checkAns.cpp
+*.txt
+*.exe
+*.sh
