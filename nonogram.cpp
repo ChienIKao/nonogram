@@ -12,7 +12,9 @@ string paint0(string s, vector<int> &d, int i, int j);
 string paint1(string s, vector<int> &d, int i, int j);
 string _paint(string s, vector<int> &d, int i, int j);
 string paint(string s, vector<int> &d, int i, int j);
-string propagate(vector<vector<int>> &G, vector<vector<int>> &d);
+set<short> propagate(vector<vector<int>> &G, vector<vector<int>> &d, string &status);
+string FP1(vector<vector<int>> &G, vector<vector<int>> &d);
+string backtracking(vector<vector<int>> &G, vector<vector<int>> &d);
 
 ifstream fin;
 ofstream fout;
@@ -26,7 +28,7 @@ int main() {
     while(!fin.fail() && fin >> cs) {
         vector<vector<int>> row(SIZE);
         vector<vector<int>> col(SIZE);   
-                 
+
         cs = cs.substr(1);
         fout << "Case: " << cs << "\n";
 
@@ -51,13 +53,14 @@ int main() {
         d.insert(d.end(), row.begin(), row.end());
         vector<vector<int>> G(SIZE, vector<int>(SIZE, -1));
 
-        // vector<int> test = {3};
-        // cout << fix("0uuu", test, 4, 0) << endl;
-        // cout << paint("0uuu", test, 4, 0) << endl;
+        // string status = backtracking(G, d);
 
-        string status = propagate(G, d);
+        long start = clock(); 
+        string status = FP1(G, d);
+        long end = clock();
 
         fout << "status: " << status << "\n";
+        fout << "time: " << (double)(end - start) / CLOCKS_PER_SEC << " sec\n";
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
                 if (G[i][j] == 1) fout << "1\t";
@@ -151,7 +154,7 @@ bool findList(queue<vector<int>> &ListG, vector<int> target) {
     return find;
 }
 
-string propagate(vector<vector<int>> &G, vector<vector<int>> &d) {
+set<short> propagate(vector<vector<int>> &G, vector<vector<int>> &d, string &status) {
     // 1.
     // PI(G) <-- NULL
     // PI(G) is a set of updated pixels
@@ -177,9 +180,7 @@ string propagate(vector<vector<int>> &G, vector<vector<int>> &d) {
     }
 
     // 3.
-    int i = 1;
     while (!ListG.empty()) {
-        // cout << "step " << i++ << endl;
 
         // 4.
         // Retrieve one line L from ListG
@@ -194,14 +195,16 @@ string propagate(vector<vector<int>> &G, vector<vector<int>> &d) {
             else sr += 'u';
         }
         
-        // cout << "sr " << sr << endl;
         // 6.
         int idx = L[0];
-        if (!fix(sr, d[idx], SIZE + 1, d[idx].size() - 1)) return "CONFLICT";
+        if (!fix(sr, d[idx], SIZE + 1, d[idx].size() - 1)) {
+            status = "CONFLICT";
+            return PIG;
+        }
 
         // 7.
         string sr2 = paint(sr, d[idx], SIZE + 1, d[idx].size() - 1);
-        // cout << "sr2: " << sr2 << endl;
+
         // 8. 
         set<short> pi;  
         for (int j = 1; j <= SIZE; j++) {
@@ -209,78 +212,178 @@ string propagate(vector<vector<int>> &G, vector<vector<int>> &d) {
             if (sr2[j] != 'u' && sr[j] == 'u') {
 
                 vector<int> tmp;
-                if (idx >= SIZE) { // col
-                    pi.insert(100 * (idx - SIZE) + (j - 1));
+                if (idx >= SIZE) { // row
+                    int r = idx - SIZE, c = j - 1;
 
-                    if (sr2[j] == '1') G[idx - SIZE][j - 1] = 1;
-                    else G[idx - SIZE][j - 1] = 0;
+                    pi.insert(100 * (r) + (c));
+
+                    if (sr2[j] == '1') G[r][c] = 1;
+                    else G[r][c] = 0;
 
                     // 9.
-                    tmp.push_back(j - 1);
-                    for (int k = 0; k < SIZE; k++) tmp.push_back(G[k][j - 1]);
-                } else { // row 
-                    pi.insert(100 * (j - 1) + idx);
+                    tmp.push_back(c);
+                    for (int k = 0; k < SIZE; k++) tmp.push_back(G[k][c]);
+                } else { // col
+                    int r = j - 1, c = idx;
+
+                    pi.insert(100 * (r) + c);
                     
-                    if (sr2[j] == '1') G[j - 1][idx] = 1;
-                    else G[j - 1][idx] = 0;
+                    if (sr2[j] == '1') G[r][c] = 1;
+                    else G[r][c] = 0;
 
                     // 9.
-                    tmp.push_back(j - 1 + SIZE);
-                    for (int k = 0; k < SIZE; k++) tmp.push_back(G[j - 1][k]);
+                    tmp.push_back(r + SIZE);
+                    for (int k = 0; k < SIZE; k++) tmp.push_back(G[r][k]);
                 }
 
                 if (!findList(ListG, tmp)) ListG.push(tmp);
             }
         }
 
-        // for (int m = 0; m < SIZE; m++) {
-        //     for (int n = 0; n < SIZE; n++) {
-        //         cout << G[m][n] << " ";
-        //     }
-        //     cout << endl;
-        // }
-
         // 10.
         // collect all painted cells in this propagate
         PIG.insert(pi.begin(), pi.end());
-
-        // cout << "PIG: ";
-        // for (auto s : PIG) {
-        //     cout << s << " ";
-        // }
-        // cout << endl << endl;
     }
-
-    // for (int i = 0; i < 2 * SIZE; i++) {
-    //     string sr = "0";
-    //     for (int j = 0; j < SIZE; j++) {
-    //         if (G[i][j] == 1) sr += '1';
-    //         else if (G[i][j] == 0) sr += '0';
-    //         else sr += 'u';
-    //     } 
-
-    //     if (!fix(sr, d[i], SIZE, d[i].size())) return "CONFLICT";
-
-    //     sr = paint(sr, d[i], SIZE, d[i].size());
-    //     if (i < SIZE) { 
-    //         for (int j = 0; j < SIZE; j++) {
-    //             if (sr[j] == '1') G[i][j] = 1;
-    //             else if (sr[j] == '0') G[i][j] = 0;
-    //             else G[i][j] = -1;
-    //         }
-    //     } else {
-    //         for (int j = 0; j < SIZE; j++) {
-    //             if (sr[j] == '1') G[j][i - SIZE] = 1;
-    //             else if (sr[j] == '0') G[j][i - SIZE] = 0;
-    //             else G[j][i - SIZE] = -1;
-    //         }
-    //     }
-    // }
 
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
-            if (G[i][j] == -1) return "INCOMPLETE";
+            if (G[i][j] == -1) {
+                status = "INCOMPLETE";
+                return PIG;
+            }
         }
     }
-    return "SOLVED";
+
+    status = "SOLVED";
+    return PIG;
+}
+
+void copy(vector<vector<int>> &a, vector<vector<int>> &b) {
+    for (int i = 0; i < a.size(); i++) {
+        for (int j = 0; j < a[i].size(); j++) {
+            a[i][j] = b[i][j];
+        }
+    }
+}
+
+string probe(short p, vector<vector<int>> &G, vector<vector<int>> &d) {
+
+    int r = p / 100, c = p % 100;
+
+    // 1.
+    string s0;
+    vector<vector<int>> GP0(G);
+    GP0[r][c] = 0;
+    set<short> PI0 = propagate(GP0, d, s0);
+
+    // 2.
+    string s1;
+    vector<vector<int>> GP1(G);
+    GP1[r][c] = 1;
+    set<short> PI1 = propagate(GP1, d, s1);
+
+    // 3. 
+    if (s0 == "CONFLICT" && s1 == "CONFLICT") return "CONFLICT"; // status G
+
+    // 4.
+    if (s0 == "CONFLICT") {
+        if (!PI1.empty()) {
+            copy(G, GP1); // 11.
+            // return "PAINTED";
+        } else return "INCOMPLETE"; // 12.
+    } else if (s1 == "CONFLICT") {
+        if (!PI0.empty()) {
+            copy(G, GP0); // 11.
+            // return "PAINTED";
+        } else return "INCOMPLETE"; // 12.
+    } else {
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                if (GP0[i][j] == GP1[i][j]) G[i][j] = GP0[i][j];
+            }
+        }
+        // return "PAINTED";
+    }
+
+    // cout << "G: \n";
+    // for (int i = 0; i < SIZE; i++) {
+    //     for (int j = 0; j < SIZE; j++) cout << G[i][j] << " ";
+    //     cout << "\n";
+    // }
+    // cout << "GP0: \n";
+    // for (int i = 0; i < SIZE; i++) {
+    //     for (int j = 0; j < SIZE; j++) cout << GP0[i][j] << " ";
+    //     cout << "\n";
+    // }
+    // cout << "GP1: \n";
+    // for (int i = 0; i < SIZE; i++) {
+    //     for (int j = 0; j < SIZE; j++) cout << GP1[i][j] << " ";
+    //     cout << "\n";
+    // }
+    return "PAINTED";
+}
+
+string FP1(vector<vector<int>> &G, vector<vector<int>> &d) {
+
+    set<short> PI;
+    string status = "";
+
+    // 2. 
+    // Repeat
+    int i = 1;
+    do {   
+        // 3.
+        // Propagate(G)
+        PI = propagate(G, d, status);
+
+        // 4.
+        if (status == "CONFLICT" || status == "SOLVED") return status;
+
+        // 6.
+        // cout << "try: " << i++ << " times\n";
+        for (int i = 0; i < SIZE; i++) {
+            for (int j = 0; j < SIZE; j++) {
+                if (G[i][j] == -1) {
+                    int p = 100 * i + j;
+                    status = probe(p, G, d);
+                    // cout << "p = " << p << " status = " << status << " G[i][j] = " << G[i][j] << "\n";
+                    if (status == "CONFLICT" || status == "SOLVED") return status;
+                    if (status == "PAINTED") break;
+                }
+            }
+            if (status == "PAINTED") break;
+        }
+
+        // for (short pi : PI) {
+        //     cout << pi << " ";
+        // }
+        // cout << "\n";
+        
+    } while (!PI.empty());
+
+    return status;
+}
+
+string backtracking(vector<vector<int>> &G, vector<vector<int>> &d) {
+    string status = FP1(G, d);
+
+    if (status == "CONFLICT" || status == "SOLVED") return status;
+
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            if (G[i][j] == -1) {
+                vector<vector<int>> GP0(G);
+                vector<vector<int>> GP1(G);
+                GP0[i][j] = 0;
+                GP1[i][j] = 1;
+
+                copy(G, GP0);
+                backtracking(GP0, d);
+
+                copy(G, GP1);
+                backtracking(GP1, d);
+            }
+        }
+    }
+    return status;
 }
