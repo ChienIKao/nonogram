@@ -23,9 +23,10 @@ int main() {
     fout.open("./output.txt");
 
     string cs;
-    vector<vector<int>> row(SIZE);
-    vector<vector<int>> col(SIZE);            
     while(!fin.fail() && fin >> cs) {
+        vector<vector<int>> row(SIZE);
+        vector<vector<int>> col(SIZE);   
+                 
         cs = cs.substr(1);
         fout << "Case: " << cs << "\n";
 
