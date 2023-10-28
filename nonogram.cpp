@@ -1,27 +1,26 @@
 #include <bits/stdc++.h>
-#define SIZE 25
+#define SIZE 15
 
 using namespace std;
 
-bool fix(string s, vector<int> &d, int i, int j);
-bool fix0(string s, vector<int> &d, int i, int j);
-bool fix1(string s, vector<int> &d, int i, int j);
-char merge_c(char sk, char tk);
-string merge(string s, string t);
-string paint0(string s, vector<int> &d, int i, int j);
-string paint1(string s, vector<int> &d, int i, int j);
-string _paint(string s, vector<int> &d, int i, int j);
-string paint(string s, vector<int> &d, int i, int j);
+bool fix(const string &s, vector<int> &d, int i, int j);
+bool fix0(const string &s, vector<int> &d, int i, int j);
+bool fix1(const string &s, vector<int> &d, int i, int j);
+string merge(const string &s, const string &t);
+string paint0(const string &s, vector<int> &d, int i, int j);
+string paint1(const string &s, vector<int> &d, int i, int j);
+string _paint(const string &s, vector<int> &d, int i, int j);
+string paint(const string &s, vector<int> &d, int i, int j);
 set<short> propagate(vector<vector<int>> &G, vector<vector<int>> &d, string &status);
-string FP1(vector<vector<int>> &G, vector<vector<int>> &d);
-string backtracking(vector<vector<int>> &G, vector<vector<int>> &d);
+void FP1(vector<vector<int>> &G, vector<vector<int>> &d, string &status);
+void backtracking(vector<vector<int>> &G, vector<vector<int>> &d, string &status);
 
 ifstream fin;
 ofstream fout;
 
 int main() {
 
-    fin.open("./test.txt"); 
+    fin.open("./tenten.txt"); 
     fout.open("./output.txt");
 
     string cs;
@@ -53,10 +52,10 @@ int main() {
         d.insert(d.end(), row.begin(), row.end());
         vector<vector<int>> G(SIZE, vector<int>(SIZE, -1));
 
-        // string status = backtracking(G, d);
-
         long start = clock(); 
-        string status = FP1(G, d);
+        // string status = FP1(G, d);
+        string status = "";
+        backtracking(G, d, status);
         long end = clock();
 
         fout << "status: " << status << "\n";
@@ -76,12 +75,12 @@ int main() {
     return 0;
 }
 
-bool fix0(string s, vector<int> &d, int i, int j) {
+bool fix0(const string &s, vector<int> &d, int i, int j) {
     if (s[i - 1] == '0' || s[i - 1] == 'u') return fix(s, d, i - 1, j);
     return false;
 }
 
-bool fix1(string s, vector<int> &d, int i, int j) {
+bool fix1(const string &s, vector<int> &d, int i, int j) {
     if (j >= 0 && i >= d[j] + 1) {
         string dj = "0";
         for (int k = 1; k <= d[j]; k++) dj = dj + "1";
@@ -94,43 +93,39 @@ bool fix1(string s, vector<int> &d, int i, int j) {
     return false;
 }
 
-bool fix(string s, vector<int> &d, int i, int j) {
+bool fix(const string &s, vector<int> &d, int i, int j) {
     if (i == 0 && j == -1) return true;
     if (i == 0 && j >= 1) return false;
     return fix0(s, d, i, j) || fix1(s, d, i, j);
 }
 
-char merge_c(char sk, char tk) {
-    if (sk == '0' && tk == '0') return '0';
-    else if (sk == '1' && tk == '1') return '1';
-    else return 'u';
-}
-
-string merge(string s, string t) {
+string merge(const string &s, const string &t) {
     string m = "";
     for (int k = 0; k < s.size(); k++) {
-        m += merge_c(s[k], t[k]);
+        if (s[k] == '0' && t[k] == '0') m += '0';
+        else if (s[k] == '1' && t[k] == '1') m += '1';
+        else m += 'u';
     }
     return m;
 }
 
-string paint0(string s, vector<int> &d, int i, int j) {
+string paint0(const string &s, vector<int> &d, int i, int j) {
     return paint(s, d, i - 1, j) + "0";
 }
 
-string paint1(string s, vector<int> &d, int i, int j) {
+string paint1(const string &s, vector<int> &d, int i, int j) {
     string dj = "0";
     for (int i = 1; i <= d[j]; i++) dj = dj + "1";
     return paint(s, d, i - d[j] - 1, j - 1) + dj;
 }
 
-string _paint(string s, vector<int> &d, int i, int j) {
+string _paint(const string &s, vector<int> &d, int i, int j) {
     if (fix0(s, d, i, j) && !fix1(s, d, i, j)) return paint0(s, d, i, j);
     if (!fix0(s, d, i, j) && fix1(s, d, i, j)) return paint1(s, d, i, j);
     return merge(paint0(s, d, i, j), paint1(s, d, i, j));
 }
 
-string paint(string s, vector<int> &d, int i, int j) {
+string paint(const string &s, vector<int> &d, int i, int j) {
     if (i == 0) return "";
     return _paint(s, d, i, j);
 }
@@ -288,11 +283,13 @@ string probe(short p, vector<vector<int>> &G, vector<vector<int>> &d) {
     // 4.
     if (s0 == "CONFLICT") {
         if (!PI1.empty()) {
+            // G = vector<vector<int>> (GP1);
             copy(G, GP1); // 11.
             // return "PAINTED";
         } else return "INCOMPLETE"; // 12.
     } else if (s1 == "CONFLICT") {
         if (!PI0.empty()) {
+            // G = vector<vector<int>> (GP0);
             copy(G, GP0); // 11.
             // return "PAINTED";
         } else return "INCOMPLETE"; // 12.
@@ -323,10 +320,10 @@ string probe(short p, vector<vector<int>> &G, vector<vector<int>> &d) {
     return "PAINTED";
 }
 
-string FP1(vector<vector<int>> &G, vector<vector<int>> &d) {
+void FP1(vector<vector<int>> &G, vector<vector<int>> &d, string &status) {
 
     set<short> PI;
-    string status = "";
+    // string status = "";
 
     // 2. 
     // Repeat
@@ -337,7 +334,7 @@ string FP1(vector<vector<int>> &G, vector<vector<int>> &d) {
         PI = propagate(G, d, status);
 
         // 4.
-        if (status == "CONFLICT" || status == "SOLVED") return status;
+        if (status == "CONFLICT" || status == "SOLVED") return ;
 
         // 6.
         // cout << "try: " << i++ << " times\n";
@@ -347,43 +344,59 @@ string FP1(vector<vector<int>> &G, vector<vector<int>> &d) {
                     int p = 100 * i + j;
                     status = probe(p, G, d);
                     // cout << "p = " << p << " status = " << status << " G[i][j] = " << G[i][j] << "\n";
-                    if (status == "CONFLICT" || status == "SOLVED") return status;
+                    if (status == "CONFLICT" || status == "SOLVED") return ;
                     if (status == "PAINTED") break;
                 }
             }
             if (status == "PAINTED") break;
         }
-
-        // for (short pi : PI) {
-        //     cout << pi << " ";
-        // }
-        // cout << "\n";
         
     } while (!PI.empty());
 
-    return status;
+    return ;
 }
 
-string backtracking(vector<vector<int>> &G, vector<vector<int>> &d) {
-    string status = FP1(G, d);
-
-    if (status == "CONFLICT" || status == "SOLVED") return status;
-
+short chooseP(vector<vector<int>> &GP, int c, vector<vector<int>> &d) {
+    short res = 0;
+    set<short> s;
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
-            if (G[i][j] == -1) {
-                vector<vector<int>> GP0(G);
-                vector<vector<int>> GP1(G);
-                GP0[i][j] = 0;
-                GP1[i][j] = 1;
+            if (GP[i][j] == -1) {
+                GP[i][j] = c;
+                string status;
+                set<short> tmp = propagate(GP, d, status);
 
-                copy(G, GP0);
-                backtracking(GP0, d);
-
-                copy(G, GP1);
-                backtracking(GP1, d);
+                if (tmp.size() > s.size()) {
+                    res = 100 * i + j;
+                    s = tmp;
+                }
             }
         }
     }
-    return status;
+    return res;
+}
+
+void backtracking(vector<vector<int>> &G, vector<vector<int>> &d, string &status) {
+    FP1(G, d, status);
+    cout << "backtracking ... status = " << status << "\n";
+
+    if (status == "CONFLICT" || status == "SOLVED") {
+        cout << status << "c or s\n";
+        return;
+    }
+
+    // ↓ 以下有誤
+    vector<vector<int>> GP0(G);
+    short p = chooseP(GP0, 0, d);
+    int r = p / 100, c = p % 100;
+    copy(G, GP0);
+    backtracking(GP0, d, status);
+
+    vector<vector<int>> GP1(G);
+    p = chooseP(GP1, 1, d);
+    r = p / 100, c = p % 100;
+    copy(G, GP1);
+    backtracking(GP1, d, status);
+    
+    return ;
 }
