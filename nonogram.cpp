@@ -1,5 +1,5 @@
 #include <bits/stdc++.h>
-#define SIZE 15
+#define SIZE 25
 
 using namespace std;
 
@@ -20,7 +20,7 @@ ofstream fout;
 
 int main() {
 
-    fin.open("./tenten.txt"); 
+    fin.open("./test.txt"); 
     fout.open("./output.txt");
 
     string cs;
@@ -301,22 +301,6 @@ string probe(short p, vector<vector<int>> &G, vector<vector<int>> &d) {
         }
         // return "PAINTED";
     }
-
-    // cout << "G: \n";
-    // for (int i = 0; i < SIZE; i++) {
-    //     for (int j = 0; j < SIZE; j++) cout << G[i][j] << " ";
-    //     cout << "\n";
-    // }
-    // cout << "GP0: \n";
-    // for (int i = 0; i < SIZE; i++) {
-    //     for (int j = 0; j < SIZE; j++) cout << GP0[i][j] << " ";
-    //     cout << "\n";
-    // }
-    // cout << "GP1: \n";
-    // for (int i = 0; i < SIZE; i++) {
-    //     for (int j = 0; j < SIZE; j++) cout << GP1[i][j] << " ";
-    //     cout << "\n";
-    // }
     return "PAINTED";
 }
 
@@ -376,23 +360,37 @@ short chooseP(vector<vector<int>> &GP, int c, vector<vector<int>> &d) {
     return res;
 }
 
+void printG(vector<vector<int>> &G, string status) {
+    fout << status << "\n";
+    for (auto r : G) {
+        for (auto c : r) {
+            if (c == -1) fout << "u ";
+            else fout << c << ' ';
+        }
+        fout << "\n";
+    }
+    fout << "\n";
+}
+
 void backtracking(vector<vector<int>> &G, vector<vector<int>> &d, string &status) {
     FP1(G, d, status);
-    cout << "backtracking ... status = " << status << "\n";
 
-    if (status == "CONFLICT" || status == "SOLVED") {
-        cout << status << "c or s\n";
-        return;
-    }
+    // printG(G, status);
+
+    if (status == "CONFLICT" || status == "SOLVED") return;
 
     // ↓ 以下有誤
+
     vector<vector<int>> GP0(G);
+    vector<vector<int>> GP1(G);
+
+    // fout << "\n === backtracking 0=== \n";
     short p = chooseP(GP0, 0, d);
     int r = p / 100, c = p % 100;
     copy(G, GP0);
     backtracking(GP0, d, status);
 
-    vector<vector<int>> GP1(G);
+    // fout << "\n === backtracking 1=== \n";
     p = chooseP(GP1, 1, d);
     r = p / 100, c = p % 100;
     copy(G, GP1);
