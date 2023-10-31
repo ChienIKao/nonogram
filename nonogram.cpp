@@ -52,10 +52,9 @@ int main() {
         d.insert(d.end(), row.begin(), row.end());
         vector<vector<int>> G(SIZE, vector<int>(SIZE, -1));
 
-        long start = clock(); 
-        // string status = FP1(G, d);
         string status = "";
-        // propagate(G, d, status);
+        
+        long start = clock();
         backtracking(G, d, status);
         long end = clock();
 
@@ -151,13 +150,9 @@ bool findList(queue<vector<int>> &ListG, vector<int> target) {
 }
 
 set<short> propagate(vector<vector<int>> &G, vector<vector<int>> &d, string &status) {
-    // 1.
-    // PI(G) <-- NULL
-    // PI(G) is a set of updated pixels
+
     set<short> PIG;
 
-    // 2.
-    // Put all rows and columns of G into List(G)
     queue<vector<int>> ListG;
     for (int i = 0; i < SIZE; i++) {
         vector<int> list = {i}; // column index
@@ -175,15 +170,11 @@ set<short> propagate(vector<vector<int>> &G, vector<vector<int>> &d, string &sta
         ListG.push(list);
     }
 
-    // 3.
     while (!ListG.empty()) {
 
-        // 4.
-        // Retrieve one line L from ListG
         vector<int> L = ListG.front();
         ListG.pop();
 
-        // 5.
         string sr = "0";
         for (int j = 1; j <= SIZE; j++) {
             if (L[j] == 1) sr += '1';
@@ -191,17 +182,14 @@ set<short> propagate(vector<vector<int>> &G, vector<vector<int>> &d, string &sta
             else sr += 'u';
         }
         
-        // 6.
         int idx = L[0];
         if (!fix(sr, d[idx], SIZE + 1, d[idx].size() - 1)) {
             status = "CONFLICT";
             return PIG;
         }
 
-        // 7.
         string sr2 = paint(sr, d[idx], SIZE + 1, d[idx].size() - 1);
 
-        // 8. 
         set<short> pi;  
         for (int j = 1; j <= SIZE; j++) {
 
@@ -216,7 +204,6 @@ set<short> propagate(vector<vector<int>> &G, vector<vector<int>> &d, string &sta
                     if (sr2[j] == '1') G[r][c] = 1;
                     else G[r][c] = 0;
 
-                    // 9.
                     tmp.push_back(c);
                     for (int k = 0; k < SIZE; k++) tmp.push_back(G[k][c]);
                 } else { // col
@@ -227,7 +214,6 @@ set<short> propagate(vector<vector<int>> &G, vector<vector<int>> &d, string &sta
                     if (sr2[j] == '1') G[r][c] = 1;
                     else G[r][c] = 0;
 
-                    // 9.
                     tmp.push_back(r + SIZE);
                     for (int k = 0; k < SIZE; k++) tmp.push_back(G[r][k]);
                 }
@@ -236,8 +222,6 @@ set<short> propagate(vector<vector<int>> &G, vector<vector<int>> &d, string &sta
             }
         }
 
-        // 10.
-        // collect all painted cells in this propagate
         PIG.insert(pi.begin(), pi.end());
     }
 
@@ -266,41 +250,32 @@ string probe(short p, vector<vector<int>> &G, vector<vector<int>> &d) {
 
     int r = p / 100, c = p % 100;
 
-    // 1.
     string s0;
     vector<vector<int>> GP0(G);
     GP0[r][c] = 0;
     set<short> PI0 = propagate(GP0, d, s0);
 
-    // 2.
     string s1;
     vector<vector<int>> GP1(G);
     GP1[r][c] = 1;
     set<short> PI1 = propagate(GP1, d, s1);
 
-    // 3. 
     if (s0 == "CONFLICT" && s1 == "CONFLICT") return "CONFLICT"; // status G
 
-    // 4.
     if (s0 == "CONFLICT") {
         if (!PI1.empty()) {
-            // G = vector<vector<int>> (GP1);
-            copy(G, GP1); // 11.
-            // return "PAINTED";
-        } else return "INCOMPLETE"; // 12.
+            copy(G, GP1); 
+        } else return "INCOMPLETE"; 
     } else if (s1 == "CONFLICT") {
         if (!PI0.empty()) {
-            // G = vector<vector<int>> (GP0);
-            copy(G, GP0); // 11.
-            // return "PAINTED";
-        } else return "INCOMPLETE"; // 12.
+            copy(G, GP0); 
+        } else return "INCOMPLETE"; 
     } else {
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
                 if (GP0[i][j] == GP1[i][j]) G[i][j] = GP0[i][j];
             }
         }
-        // return "PAINTED";
     }
     return "PAINTED";
 }
@@ -308,27 +283,19 @@ string probe(short p, vector<vector<int>> &G, vector<vector<int>> &d) {
 void FP1(vector<vector<int>> &G, vector<vector<int>> &d, string &status) {
 
     set<short> PI;
-    // string status = "";
 
-    // 2. 
-    // Repeat
     int i = 1;
     do {   
-        // 3.
-        // Propagate(G)
+   
         PI = propagate(G, d, status);
 
-        // 4.
         if (status == "CONFLICT" || status == "SOLVED") return ;
 
-        // 6.
-        // cout << "try: " << i++ << " times\n";
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
                 if (G[i][j] == -1) {
                     int p = 100 * i + j;
                     status = probe(p, G, d);
-                    // cout << "p = " << p << " status = " << status << " G[i][j] = " << G[i][j] << "\n";
                     if (status == "CONFLICT" || status == "SOLVED") return ;
                     if (status == "PAINTED") break;
                 }
@@ -340,26 +307,6 @@ void FP1(vector<vector<int>> &G, vector<vector<int>> &d, string &status) {
 
     return ;
 }
-
-// short chooseP(vector<vector<int>> &GP, int c, vector<vector<int>> &d) {
-//     short res = 0;
-//     set<short> s;
-//     for (int i = 0; i < SIZE; i++) {
-//         for (int j = 0; j < SIZE; j++) {
-//             if (GP[i][j] == -1) {
-//                 GP[i][j] = c;
-//                 string status;
-//                 set<short> tmp = propagate(GP, d, status);
-
-//                 if (tmp.size() > s.size()) {
-//                     res = 100 * i + j;
-//                     s = tmp;
-//                 }
-//             }
-//         }
-//     }
-//     return res;
-// }
 
 short chooseP(vector<vector<int>> &G) {
     for (int i = 0; i < SIZE; i++) {
@@ -386,8 +333,6 @@ void backtracking(vector<vector<int>> &G, vector<vector<int>> &d, string &status
     FP1(G, d, status);
 
     if (status == "CONFLICT" || status == "SOLVED") return;
-
-    // ↓ 以下有誤
 
     vector<vector<int>> GP0(G);
     vector<vector<int>> GP1(G);
