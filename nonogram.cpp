@@ -55,6 +55,7 @@ int main() {
         long start = clock(); 
         // string status = FP1(G, d);
         string status = "";
+        // propagate(G, d, status);
         backtracking(G, d, status);
         long end = clock();
 
@@ -340,24 +341,33 @@ void FP1(vector<vector<int>> &G, vector<vector<int>> &d, string &status) {
     return ;
 }
 
-short chooseP(vector<vector<int>> &GP, int c, vector<vector<int>> &d) {
-    short res = 0;
-    set<short> s;
+// short chooseP(vector<vector<int>> &GP, int c, vector<vector<int>> &d) {
+//     short res = 0;
+//     set<short> s;
+//     for (int i = 0; i < SIZE; i++) {
+//         for (int j = 0; j < SIZE; j++) {
+//             if (GP[i][j] == -1) {
+//                 GP[i][j] = c;
+//                 string status;
+//                 set<short> tmp = propagate(GP, d, status);
+
+//                 if (tmp.size() > s.size()) {
+//                     res = 100 * i + j;
+//                     s = tmp;
+//                 }
+//             }
+//         }
+//     }
+//     return res;
+// }
+
+short chooseP(vector<vector<int>> &G) {
     for (int i = 0; i < SIZE; i++) {
         for (int j = 0; j < SIZE; j++) {
-            if (GP[i][j] == -1) {
-                GP[i][j] = c;
-                string status;
-                set<short> tmp = propagate(GP, d, status);
-
-                if (tmp.size() > s.size()) {
-                    res = 100 * i + j;
-                    s = tmp;
-                }
-            }
+            if (G[i][j] == -1) return 100 * i + j;
         }
     }
-    return res;
+    return -1;
 }
 
 void printG(vector<vector<int>> &G, string status) {
@@ -375,8 +385,6 @@ void printG(vector<vector<int>> &G, string status) {
 void backtracking(vector<vector<int>> &G, vector<vector<int>> &d, string &status) {
     FP1(G, d, status);
 
-    // printG(G, status);
-
     if (status == "CONFLICT" || status == "SOLVED") return;
 
     // ↓ 以下有誤
@@ -384,17 +392,22 @@ void backtracking(vector<vector<int>> &G, vector<vector<int>> &d, string &status
     vector<vector<int>> GP0(G);
     vector<vector<int>> GP1(G);
 
-    // fout << "\n === backtracking 0=== \n";
-    short p = chooseP(GP0, 0, d);
+    short p = chooseP(G);
     int r = p / 100, c = p % 100;
-    copy(G, GP0);
+    GP0[r][c] = 0;
     backtracking(GP0, d, status);
 
-    // fout << "\n === backtracking 1=== \n";
-    p = chooseP(GP1, 1, d);
-    r = p / 100, c = p % 100;
-    copy(G, GP1);
+    if (status == "SOLVED") {
+        copy(G, GP0);
+        return ;
+    }
+
+    GP1[r][c] = 1;
     backtracking(GP1, d, status);
-    
+    if (status == "SOLVED") {
+        copy(G, GP1);
+        return ;
+    }
+
     return ;
 }
