@@ -23,13 +23,14 @@ int main() {
     fin.open("./test.txt"); 
     fout.open("./output.txt");
 
-    string cs;
+    string cs, output = "";
     while(!fin.fail() && fin >> cs) {
         vector<vector<int>> row(SIZE);
         vector<vector<int>> col(SIZE);   
 
         cs = cs.substr(1);
-        fout << "Case: " << cs << "\n";
+        // fout << "Case: " << cs << "\n";
+        output += "Case: " + cs + "\n";
 
         int num, i = 0;
         char symbol;
@@ -53,21 +54,30 @@ int main() {
         vector<vector<int>> G(SIZE, vector<int>(SIZE, -1));
 
         string status = "";
-        
+
         long start = clock();
         backtracking(G, d, status);
         long end = clock();
 
-        fout << "status: " << status << "\n";
-        fout << "time: " << (double)(end - start) / CLOCKS_PER_SEC << " sec\n";
+        // fout << "status: " << status << "\n";
+        // fout << "time: " << (double)(end - start) / CLOCKS_PER_SEC << " sec\n";
+        output += "status: " + status + "\n";
+        
+        output += "time: ";
+        output += to_string((double)(end - start) / CLOCKS_PER_SEC);
+        output += " sec\n";
+        
         for (int i = 0; i < SIZE; i++) {
             for (int j = 0; j < SIZE; j++) {
-                if (G[i][j] == 1) fout << "1\t";
-                else if (G[i][j] == 0) fout << "0\t";
-                else fout << "u\t";
+                if (G[i][j] == 1) output += "1\t"; // fout << "1\t";
+                else if (G[i][j] == 0) output += "0\t"; // fout << "0\t";
+                else output += "u\t"; // fout << "u\t";
             }
-            fout << "\n";
+            output += "\n"; // fout << "\n";
         }
+
+        fout << output;
+        output = "";
     }
 
     fin.close();
@@ -317,6 +327,33 @@ short chooseP(vector<vector<int>> &G) {
     return -1;
 }
 
+short chooseP(vector<vector<int>> &G, vector<vector<int>> d, string status) {
+    set<short> s0, s1;
+    int max = 0;
+    short res = 0;
+
+    vector<vector<int>> GP0(G);
+    vector<vector<int>> GP1(G);
+    for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; j++) {
+            if (G[i][j] == -1) {
+                GP0[i][j] = 0;
+                s0 = propagate(GP0, d, status);
+
+                GP1[i][j] = 1;
+                s1 = propagate(GP1, d, status);
+
+                int p0 = s0.size(), p1 = s1.size();
+                if ((p0 + 1) * (p1 + 1) > max) {
+                    res = i * 100 + j;
+                    max = (p0 + 1) * (p1 + 1);
+                }
+            }
+        }
+    }    
+    return res;
+}
+
 void printG(vector<vector<int>> &G, string status) {
     fout << status << "\n";
     for (auto r : G) {
@@ -336,6 +373,7 @@ void backtracking(vector<vector<int>> &G, vector<vector<int>> &d, string &status
 
     vector<vector<int>> GP0(G);
     vector<vector<int>> GP1(G);
+    vector<vector<int>> tmpG(G);
 
     short p = chooseP(G);
     int r = p / 100, c = p % 100;
